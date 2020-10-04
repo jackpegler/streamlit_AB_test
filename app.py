@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import chisquare, ttest_ind
 import plotly.figure_factory as ff
 import plotly.express as px
+from PIL import Image
 
 
 st.title("Significance Test")
@@ -189,8 +190,8 @@ if means_test:
         ### PLOT SPREAD OF DATA
         st.subheader("Distribution of the groups")
         with st.spinner("Creating plot of data... (can take a minute if lots of data)"):
-            g1 = data[data['group']=='Treatment']['amount']
-            g2 = data[data['group']=='Control']['amount']
+            g1 = data[data[groups]==group_names[0]][metric]
+            g2 = data[data[groups]==group_names[1]][metric]
 
             hist_data = [g1,g2]
             fig = ff.create_distplot(hist_data, group_names)
@@ -212,7 +213,56 @@ if means_test:
 st.markdown("## **3. More info on the tests**")
 ### EXPLAINER ON THE CHI SQUARE
 if st.checkbox("Learn more about Chi-Square Test"):
-    st.write("explain it alll")
+
+    st.markdown("""
+    ### Chi Square:
+
+    #### _Hypothesis_
+    * **H_0 (Null Hypothesis)** - There is no impact of the Treatment on the number of people engaging
+    * **H_a (Alternate Hypothesis** - H_0 is FALSE and the Treatment does make a difference
+    * Lets use _alpha = 0.05_ for our **significance**
+
+    #### _Test Statistic_
+
+    As we're looking at two categorical variables (engagment: yes/no & group: treatment/control) we use the Chi Squared test, which uses the following formula
+
+    """)
+
+    image1 = Image.open('images/equation_image7.jpg')
+    st.image(image1, caption='Equation for Chi Square', use_column_width=False)
+
+
+    st.markdown("""
+    #### _Decision Rule_
+
+    Our **degrees of freedom** are `(#row - 1) * (#column - 1) = (2-1) * (2-1) = 1`
+
+    At our significance level of `alpha = 0.05` the critical value is **3.84**
+    """)
+
+    image2 = Image.open('images/chi-square_table.png')
+    st.image(image2, caption='Chi Square distribution table', use_column_width=True)
+
+    st.markdown("""
+    Therefore we'll reject H_0 if our `Chi**2 >= 3.84`
+    (Equivalently, if our returned p-value < alpha then we'll also reject the H_0)
+    """)
+
+
+
+    st.markdown("""
+    #### _Computing the Test Statistic_
+
+    To compute using the fomula above we need the expected values for each cell in the table, calculated using
+    """)
+
+    image3 = Image.open('images/equation.png')
+    st.image(image3, caption='Formula for expected values', use_column_width=False)
+
+
+
+
+
 
 ## EXPLAINER ON THE T-TEST
 if st.checkbox("Learn more about T-Test"):
