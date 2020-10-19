@@ -38,7 +38,7 @@ if uploaded_file is not None:
 
     data = load_data()
 
-    show_data = st.checkbox("Show RAW data", True)
+    show_data = st.checkbox("Show RAW data of {} records".format(len(data)), True)
     if show_data:
         st.subheader("Your raw data")
         st.write(data)
@@ -83,13 +83,19 @@ if proportion_test:
         st.write(actuals)
 
         ### PLOT ENGAGEMENT RATE
+
         ### FIRST GET ENAGEMENT RATE (ONLY WORKS FOR 2 GROUPS)
         group_names = data[groups].unique()
         group_engagement = [data[data[groups]==group_names[i]][engaged].mean() for i in range(0,len(group_names))]
+
         plot_data = pd.DataFrame.from_dict({'groups':group_names,'engagement':group_engagement})
+        ### Allow Sample of the numbers
+        st.text("Select number of values to plot")
+        sample_length = st.slider("Values to sample:", 0, len(plot_data), len(plot_data))
+        plot_data_sample = plot_date.sample(n=sample_length, random_state=42)
         ### PLOT IT
         st.subheader("Engagement Rate")
-        fig1 = px.bar(plot_data, x='groups', y='engagement', color='groups')
+        fig1 = px.bar(plot_data_sample, x='groups', y='engagement', color='groups')
         st.plotly_chart(fig1, use_container_width=True)
 
 
@@ -172,14 +178,24 @@ if means_test:
     alpha_mean=st.sidebar.slider("Alpha:", 0.0, 1.0, 0.05, key="alpha_mean")
 
 
+    ### GET GROUP NAMES AND SPLIT THE DATA
+    group_names = list(set(data[groups]))
+    Sample_A = data[data[groups]==group_names[0]][metric]
+    Sample_B = data[data[groups]==group_names[1]][metric]
+
+
+    if st.checkbox("Select sample data to plot (good if have large data set!)", False):
+        ### Allow Sample of the numbers
+        st.markdown("Select number of values to plot for each group")
+        sample_1_length = st.slider("{}:".format(group_names[0]), 0, len(data[data[groups]==group_names[0]]), len(data[data[groups]==group_names[0]]))
+        sample_2_length = st.slider("{}:".format(group_names[1]), 0, len(data[data[groups]==group_names[1]]), len(data[data[groups]==group_names[1]]))
+
+
+
     if st.button("Test Significance",key='mean_test'):
         st.markdown("We test the significance using a **T-Test**")
         st.markdown("The standard value of alpha is {}. The defaults can be changed in the sidebar, to learn more expand the explaination section at the bottom".format(alpha_mean))
 
-        ### GET GROUP NAMES AND SPLIT THE DATA
-        group_names = list(set(data[groups]))
-        Sample_A = data[data[groups]==group_names[0]][metric]
-        Sample_B = data[data[groups]==group_names[1]][metric]
 
         ### PLOT SUMMARY STATS
         st.markdown("Testing the significance of the change in **{}**".format(metric))
@@ -190,8 +206,8 @@ if means_test:
         ### PLOT SPREAD OF DATA
         st.subheader("Distribution of the groups")
         with st.spinner("Creating plot of data... (can take a minute if lots of data)"):
-            g1 = data[data[groups]==group_names[0]][metric]
-            g2 = data[data[groups]==group_names[1]][metric]
+            g1 = data[data[groups]==group_names[0]][metric].sample(n=sample_1_length, random_state=42)
+            g2 = data[data[groups]==group_names[1]][metric].sample(n=sample_2_length, random_state=42)
 
             hist_data = [g1,g2]
             fig = ff.create_distplot(hist_data, group_names)
