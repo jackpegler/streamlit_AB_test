@@ -89,13 +89,11 @@ if proportion_test:
         group_engagement = [data[data[groups]==group_names[i]][engaged].mean() for i in range(0,len(group_names))]
 
         plot_data = pd.DataFrame.from_dict({'groups':group_names,'engagement':group_engagement})
-        ### Allow Sample of the numbers
-        st.text("Select number of values to plot")
-        sample_length = st.slider("Values to sample:", 0, len(plot_data), len(plot_data))
-        plot_data_sample = plot_date.sample(n=sample_length, random_state=42)
+
         ### PLOT IT
         st.subheader("Engagement Rate")
-        fig1 = px.bar(plot_data_sample, x='groups', y='engagement', color='groups')
+        fig1 = px.bar(plot_data, x='groups', y='engagement', color='groups', color_discrete_sequence=["red", "blue"])
+        fig1.update_yaxes(tickformat=".2%")
         st.plotly_chart(fig1, use_container_width=True)
 
 
@@ -190,7 +188,9 @@ if means_test:
         sample_1_length = st.slider("{}:".format(group_names[0]), 0, len(data[data[groups]==group_names[0]]), len(data[data[groups]==group_names[0]]))
         sample_2_length = st.slider("{}:".format(group_names[1]), 0, len(data[data[groups]==group_names[1]]), len(data[data[groups]==group_names[1]]))
 
-
+    else:
+        sample_1_length = len(data[data[groups]==group_names[0]])
+        sample_2_length = len(data[data[groups]==group_names[1]])
 
     if st.button("Test Significance",key='mean_test'):
         st.markdown("We test the significance using a **T-Test**")
@@ -204,27 +204,29 @@ if means_test:
         st.write(metric_summary)
 
         ### PLOT SPREAD OF DATA
-        st.subheader("Distribution of the groups")
-        with st.spinner("Creating plot of data... (can take a minute if lots of data)"):
-            g1 = data[data[groups]==group_names[0]][metric].sample(n=sample_1_length, random_state=42)
-            g2 = data[data[groups]==group_names[1]][metric].sample(n=sample_2_length, random_state=42)
+        if st.checkbox("plot the data?", True):
+            st.subheader("Distribution of the groups")
+            with st.spinner("Creating plot of data... (can take a minute if lots of data)"):
+                g1 = data[data[groups]==group_names[0]][metric].sample(n=sample_1_length, random_state=42)
+                g2 = data[data[groups]==group_names[1]][metric].sample(n=sample_2_length, random_state=42)
 
-            hist_data = [g1,g2]
-            fig = ff.create_distplot(hist_data, group_names)
-            st.plotly_chart(fig, use_container_width=True)
+                hist_data = [g1,g2]
+                fig = ff.create_distplot(hist_data, group_names)
+                st.plotly_chart(fig, use_container_width=True)
 
-            ### DO THE T-TEST
-            t_result = ttest_ind(Sample_A, Sample_B)
+        ### DO THE T-TEST
+        t_result = ttest_ind(Sample_A, Sample_B)
 
-            ### DISPLAY RESULTS OF THE TEST
-            if (t_result[1] < alpha_mean):
-                st.text("test statistic: {0}, p-value: {1}".format(t_result[0].round(3),t_result[1].round(3)))
-                st.text("Alpha is {} so".format(alpha_mean))
-                st.success("Difference is SIGNIFICANT")
-                st.balloons()
-            else:
-                st.text("test statistic: {0}, p-value: {1}".format(t_result[0].round(3),t_result[1].round(3)))
-                st.warning("Difference is NOT SIGNIFICANT")
+
+        ### DISPLAY RESULTS OF THE TEST
+        if (t_result[1] < alpha_mean):
+            st.text("test statistic: {0}, p-value: {1}".format(t_result[0].round(3),t_result[1]))
+            st.text("Alpha is {} so".format(alpha_mean))
+            st.success("Difference is SIGNIFICANT")
+            st.balloons()
+        else:
+            st.text("test statistic: {0}, p-value: {1}".format(t_result[0].round(3),t_result[1]))
+            st.warning("Difference is NOT SIGNIFICANT")
 
 st.markdown("## **3. More info on the tests**")
 ### EXPLAINER ON THE CHI SQUARE
